@@ -7,4 +7,24 @@ import javax.inject.Inject
 @HiltViewModel
 internal class LogInViewModel @Inject constructor() : BaseViewModel<LogInUiState>() {
     override fun createInitialState() = LogInUiState()
+
+    fun emailChange (email: String) {
+        setState {
+            copy(
+                email = email
+            )
+        }
+    }
+
+    fun passwordChange (password: String) {
+        setState {
+            copy(
+                password = password
+            )
+        }
+    }
+
+    fun logIn () {
+
+    }
 }
