@@ -6,6 +6,14 @@
 
     <fragment
         android:id="@+id/logInFragment"
-        android:name="com.example.spiicev2.logIn.LogInFragment"
-        android:label="LogInFragment" />
+        android:name="com.example.spiicev2.presentation.logIn.LogInFragment"
+        android:label="LogInFragment" >
+        <action
+            android:id="@+id/action_logInFragment_to_mainScreenFragment"
+            app:destination="@id/mainScreenFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/mainScreenFragment"
+        android:name="com.example.spiicev2.presentation.mainScreen.MainScreenFragment"
+        android:label="MainScreenFragment" />
 </navigation>

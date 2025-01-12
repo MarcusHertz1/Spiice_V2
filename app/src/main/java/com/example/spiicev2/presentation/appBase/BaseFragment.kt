@@ -1,4 +1,4 @@
-package com.example.spiicev2.appBase
+package com.example.spiicev2.presentation.appBase
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,7 +9,7 @@ import androidx.compose.runtime.Stable
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.fragment.app.Fragment
-import com.example.spiicev2.ui.theme.Pink80
+import com.example.spiicev2.presentation.theme.Pink80
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.channels.Channel

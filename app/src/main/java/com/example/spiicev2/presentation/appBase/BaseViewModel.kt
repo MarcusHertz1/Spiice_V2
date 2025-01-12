@@ -1,4 +1,4 @@
-package com.example.spiicev2.appBase
+package com.example.spiicev2.presentation.appBase
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -35,5 +35,5 @@ abstract class BaseViewModel<STATE: UiState> : ViewModel() {
 }
 
 sealed class NavigationCommand {
-    data class GoToProductCatalog(val slug: String, val title: String) : NavigationCommand()
+    data object GoToMainScreen : NavigationCommand()
 }
