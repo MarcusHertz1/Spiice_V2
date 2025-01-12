@@ -9,6 +9,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.spiicev2.appBase.BaseFragment
 import com.example.spiicev2.ui.theme.SpiiceV2Theme
 import kotlinx.coroutines.channels.Channel
+import androidx.lifecycle.viewmodel.compose.viewModel
 
 class LogInFragment :BaseFragment() {
     //Create - единственная Composable функция, которая находится в теле фрагмента
@@ -20,11 +21,11 @@ class LogInFragment :BaseFragment() {
 
 }
 
-
 //State - Composable функция где определяется ui state
 @Composable
 private fun LogInState( //
     navController: NavController,
+    viewModel: LogInViewModel = viewModel()
 ) {
     //val state by viewModel.state.collectAsState()
     LogInScreen{ navController.popBackStack() }

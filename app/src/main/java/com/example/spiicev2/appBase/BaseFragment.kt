@@ -24,7 +24,6 @@ abstract class BaseFragment : Fragment() {
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
-
                 Create(arguments, resultChannel)
             }
         }
