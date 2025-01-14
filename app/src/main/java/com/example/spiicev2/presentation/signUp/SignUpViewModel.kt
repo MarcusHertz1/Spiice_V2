@@ -43,6 +43,15 @@ internal class SignUpViewModel @Inject constructor(
         }
     }
 
+    fun confirmPasswordSet(password: String) {
+        setState {
+            copy(
+                confirmPassword = password,
+                errorMessage = ""
+            )
+        }
+    }
+
     fun signUp() {
         setState {
             copy(
@@ -52,16 +61,19 @@ internal class SignUpViewModel @Inject constructor(
         val email = state.value.email
         val password = state.value.password
         if (email.isNotBlank() && password.isNotBlank()) {
+            println("email: $email, password: $password")
             emailAuthUseCase.signUpWithEmail(
                 email = email,
                 password = password,
                 onSuccess = { user ->
+                    println("Success")
                     viewModelScope.launch {
                         dataStoreManager.setEmail(user.email.orEmpty())
                         navigateTo(NavigationCommand.GoToMainScreen)
                     }
                 },
                 onError = { error ->
+                    println("error")
                     setState {
                         copy(
                             errorMessage = "Firebase error: ${error.message}"

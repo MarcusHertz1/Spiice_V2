@@ -23,19 +23,44 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.example.spiicev2.R
+import com.example.spiicev2.data.dataStore.DataStoreManager
 import com.example.spiicev2.presentation.appBase.BaseFragment
 import com.example.spiicev2.presentation.appBase.NavigationCommand
 import com.example.spiicev2.presentation.theme.SpiiceV2Theme
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
 
 class LogInFragment : BaseFragment() {
     //Create - единственная Composable функция, которая находится в теле фрагмента
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        val navController = findNavController()
+        lifecycleScope.launch {
+
+                val email = DataStoreManager(requireContext()).getEmail()
+                println("email = $email")
+                if (!email.isNullOrBlank()) {
+                    val navOptions: NavOptions = NavOptions.Builder()
+                        .setPopUpTo(R.id.mainScreenFragment, true)
+                        .build()
+
+                    navController.navigate(
+                        R.id.action_logInFragment_to_mainScreenFragment,
+                        null,
+                        navOptions
+                    )
+                }
+
+        }
+    }
     @Composable
     override fun Create(arguments: Bundle?, resultChannel: Channel<Bundle>) {
         val navController = findNavController()
@@ -63,9 +88,7 @@ private fun LogInState( //
                     )
                         .show()
             }
-    }
 
-    LaunchedEffect(Unit) {
         viewModel.navigationCommands.collect { command ->
             when (command) {
                 is NavigationCommand.GoToMainScreen -> {
@@ -73,6 +96,8 @@ private fun LogInState( //
                         R.id.action_logInFragment_to_mainScreenFragment,
                     )
                 }
+
+                else -> {}
             }
         }
     }

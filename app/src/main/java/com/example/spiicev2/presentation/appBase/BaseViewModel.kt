@@ -36,4 +36,5 @@ abstract class BaseViewModel<STATE: UiState> : ViewModel() {
 
 sealed class NavigationCommand {
     data object GoToMainScreen : NavigationCommand()
+    data object GoToLogInScreen : NavigationCommand()
 }
