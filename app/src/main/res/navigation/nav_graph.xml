@@ -11,9 +11,20 @@
         <action
             android:id="@+id/action_logInFragment_to_mainScreenFragment"
             app:destination="@id/mainScreenFragment" />
+        <action
+            android:id="@+id/action_logInFragment_to_signUpFragment"
+            app:destination="@id/signUpFragment" />
     </fragment>
     <fragment
         android:id="@+id/mainScreenFragment"
         android:name="com.example.spiicev2.presentation.mainScreen.MainScreenFragment"
         android:label="MainScreenFragment" />
+    <fragment
+        android:id="@+id/signUpFragment"
+        android:name="com.example.spiicev2.presentation.signUp.SignUpFragment"
+        android:label="SignUpFragment" >
+        <action
+            android:id="@+id/action_signUpFragment_to_mainScreenFragment"
+            app:destination="@id/mainScreenFragment" />
+    </fragment>
 </navigation>

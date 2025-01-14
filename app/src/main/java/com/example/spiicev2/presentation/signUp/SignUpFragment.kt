@@ -1,8 +1,6 @@
-package com.example.spiicev2.presentation.logIn
+package com.example.spiicev2.presentation.signUp
 
 import android.os.Bundle
-import android.widget.Toast
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,103 +14,78 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.fragment.findNavController
 import com.example.spiicev2.R
 import com.example.spiicev2.presentation.appBase.BaseFragment
 import com.example.spiicev2.presentation.appBase.NavigationCommand
 import com.example.spiicev2.presentation.theme.SpiiceV2Theme
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.flow.filterNotNull
 
-class LogInFragment : BaseFragment() {
-    //Create - единственная Composable функция, которая находится в теле фрагмента
+class SignUpFragment : BaseFragment()  {
+
     @Composable
     override fun Create(arguments: Bundle?, resultChannel: Channel<Bundle>) {
         val navController = findNavController()
-        LogInState(navController)
+        SignUpState(navController)
     }
 }
 
-//State - Composable функция где определяется ui state
 @Composable
-private fun LogInState( //
+private fun SignUpState(
     navController: NavController,
-    viewModel: LogInViewModel = viewModel()
+    viewModel: SignUpViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
-    val context = LocalContext.current
-    LaunchedEffect(Unit) {
-        snapshotFlow { state.errorMessage }
-            .filterNotNull()
-            .collectLatest {
-                if (it.isNotBlank())
-                    Toast.makeText(
-                        context,
-                        it,
-                        Toast.LENGTH_SHORT
-                    )
-                        .show()
-            }
-    }
+    //val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.navigationCommands.collect { command ->
             when (command) {
                 is NavigationCommand.GoToMainScreen -> {
                     navController.navigate(
-                        R.id.action_logInFragment_to_mainScreenFragment,
+                        R.id.action_signUpFragment_to_mainScreenFragment,
                     )
                 }
             }
         }
     }
 
-    LogInScreen(
+    SignUpScreen(
         state = state,
-        viewModel = viewModel,
-        navController = navController
+        viewModel = viewModel
     )
 }
 
-//Screen - Composable функция, где прописывается Scaffold
 @Composable
-private fun LogInScreen(
-    state: LogInUiState,
-    viewModel: LogInViewModel,
-    navController: NavController
+private fun SignUpScreen(
+    state: SignUpUiState,
+    viewModel: SignUpViewModel,
 ) {
     Scaffold { padding ->
-        LogInScreenState(
+        SignUpScreenState(
             padding = padding,
             state = state,
-            onEmailChange = { viewModel.emailChange(it) },
-            onPasswordChange = { viewModel.passwordChange(it) },
-            onLogInClick = { viewModel.logIn() },
-            navController = navController
+            onEmailSet = { viewModel.emailSet(it) },
+            onPasswordSet = { viewModel.passwordSet(it) },
+            onSignUpClick = {viewModel.signUp()}
         )
     }
 }
 
-//ScreenState - Composable функция, где прописывается ТЕЛО Scaffold (его добавляют в превью)
 @Composable
-private fun LogInScreenState(
+private fun SignUpScreenState(
     padding: PaddingValues = PaddingValues(),
-    state: LogInUiState,
-    onEmailChange: (String) -> Unit = {},
-    onPasswordChange: (String) -> Unit = {},
-    onLogInClick: () -> Unit = {},
-    navController: NavController
+    state: SignUpUiState,
+    onEmailSet: (String) -> Unit = {},
+    onPasswordSet: (String) -> Unit = {},
+    onSignUpClick: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -123,36 +96,30 @@ private fun LogInScreenState(
     ) {
         OutlinedTextField(
             value = state.email,
-            onValueChange = { onEmailChange(it) },
+            onValueChange = { onEmailSet(it) },
             label = { Text(stringResource(R.string.email)) }
         )
         OutlinedTextField(
             value = state.password,
-            onValueChange = { onPasswordChange(it) },
+            onValueChange = { onPasswordSet(it) },
             label = { Text(stringResource(R.string.password)) }
         )
         Button(
-            onClick = { onLogInClick() }
+            onClick = { onSignUpClick() }
         ) {
-            Text(stringResource(R.string.logIn))
+            Text(stringResource(R.string.signUp))
         }
-        Text(
-            modifier = Modifier.clickable { navController.navigate("register") },
-            text = stringResource(R.string.logInToSignUp)
-        )
     }
 }
 
 @Preview(backgroundColor = 0xFFFFFFFF)
 @Composable
-private fun LogInScreenPreview() {
-    val navController = rememberNavController()
+private fun SignUpScreenPreview() {
     SpiiceV2Theme {
-        LogInScreenState(
-            state = LogInUiState(
+        SignUpScreenState(
+            state = SignUpUiState(
                 email = "jhdafgjh"
-            ),
-            navController = navController
+            )
         )
     }
 }
