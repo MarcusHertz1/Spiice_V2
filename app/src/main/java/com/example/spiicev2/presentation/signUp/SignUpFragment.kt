@@ -1,6 +1,7 @@
 package com.example.spiicev2.presentation.signUp
 
 import android.os.Bundle
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -28,7 +29,7 @@ import com.example.spiicev2.presentation.appBase.NavigationCommand
 import com.example.spiicev2.presentation.theme.SpiiceV2Theme
 import kotlinx.coroutines.channels.Channel
 
-class SignUpFragment : BaseFragment()  {
+class SignUpFragment : BaseFragment() {
 
     @Composable
     override fun Create(arguments: Bundle?, resultChannel: Channel<Bundle>) {
@@ -59,7 +60,10 @@ private fun SignUpState(
 
     SignUpScreen(
         state = state,
-        viewModel = viewModel
+        viewModel = viewModel,
+        goBack = {
+            navController.popBackStack()
+        }
     )
 }
 
@@ -67,6 +71,7 @@ private fun SignUpState(
 private fun SignUpScreen(
     state: SignUpUiState,
     viewModel: SignUpViewModel,
+    goBack: () -> Unit = {}
 ) {
     Scaffold { padding ->
         SignUpScreenState(
@@ -74,7 +79,8 @@ private fun SignUpScreen(
             state = state,
             onEmailSet = { viewModel.emailSet(it) },
             onPasswordSet = { viewModel.passwordSet(it) },
-            onSignUpClick = {viewModel.signUp()}
+            onSignUpClick = { viewModel.signUp() },
+            goBack = goBack
         )
     }
 }
@@ -85,7 +91,8 @@ private fun SignUpScreenState(
     state: SignUpUiState,
     onEmailSet: (String) -> Unit = {},
     onPasswordSet: (String) -> Unit = {},
-    onSignUpClick: () -> Unit = {}
+    onSignUpClick: () -> Unit = {},
+    goBack: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -104,11 +111,22 @@ private fun SignUpScreenState(
             onValueChange = { onPasswordSet(it) },
             label = { Text(stringResource(R.string.password)) }
         )
+        OutlinedTextField(
+            value = state.confirmPassword,
+            onValueChange = { onPasswordSet(it) },
+            label = { Text(stringResource(R.string.confirmPassword)) }
+        )
         Button(
             onClick = { onSignUpClick() }
         ) {
             Text(stringResource(R.string.signUp))
         }
+        Text(
+            modifier = Modifier.clickable {
+                goBack()
+            },
+            text = stringResource(R.string.signUpToLogIn)
+        )
     }
 }
 

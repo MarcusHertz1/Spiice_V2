@@ -2,7 +2,9 @@
     <string name="app_name">Spiice V2</string>
     <string name="email">Email</string>
     <string name="password">Password</string>
+    <string name="confirmPassword">Confirm Password</string>
     <string name="logIn">Log In</string>
     <string name="signUp">Sign Up</string>
-    <string name="logInToSignUp">Already have an account? Log In</string>
+    <string name="signUpToLogIn">Already don\'t have an account? Log In</string>
+    <string name="logInToSignUp">Already have an account? Sign Up</string>
 </resources>

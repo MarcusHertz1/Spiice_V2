@@ -25,7 +25,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.fragment.findNavController
 import com.example.spiicev2.R
 import com.example.spiicev2.presentation.appBase.BaseFragment
@@ -81,7 +80,11 @@ private fun LogInState( //
     LogInScreen(
         state = state,
         viewModel = viewModel,
-        navController = navController
+        goToSignUp = {
+            navController.navigate(
+                R.id.action_logInFragment_to_signUpFragment,
+            )
+        }
     )
 }
 
@@ -90,7 +93,7 @@ private fun LogInState( //
 private fun LogInScreen(
     state: LogInUiState,
     viewModel: LogInViewModel,
-    navController: NavController
+    goToSignUp: () -> Unit = {}
 ) {
     Scaffold { padding ->
         LogInScreenState(
@@ -99,7 +102,7 @@ private fun LogInScreen(
             onEmailChange = { viewModel.emailChange(it) },
             onPasswordChange = { viewModel.passwordChange(it) },
             onLogInClick = { viewModel.logIn() },
-            navController = navController
+            goToSignUp = goToSignUp
         )
     }
 }
@@ -112,7 +115,7 @@ private fun LogInScreenState(
     onEmailChange: (String) -> Unit = {},
     onPasswordChange: (String) -> Unit = {},
     onLogInClick: () -> Unit = {},
-    navController: NavController
+    goToSignUp: () -> Unit = {}
 ) {
     Column(
         modifier = Modifier
@@ -137,7 +140,9 @@ private fun LogInScreenState(
             Text(stringResource(R.string.logIn))
         }
         Text(
-            modifier = Modifier.clickable { navController.navigate("register") },
+            modifier = Modifier.clickable {
+                goToSignUp()
+            },
             text = stringResource(R.string.logInToSignUp)
         )
     }
@@ -146,13 +151,11 @@ private fun LogInScreenState(
 @Preview(backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun LogInScreenPreview() {
-    val navController = rememberNavController()
     SpiiceV2Theme {
         LogInScreenState(
             state = LogInUiState(
                 email = "jhdafgjh"
-            ),
-            navController = navController
+            )
         )
     }
 }

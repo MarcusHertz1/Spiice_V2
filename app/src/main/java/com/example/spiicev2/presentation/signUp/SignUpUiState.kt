@@ -7,5 +7,6 @@ import com.example.spiicev2.presentation.appBase.UiState
 data class SignUpUiState(
     val email: String = "",
     val password: String = "",
+    val confirmPassword: String = "",
     val errorMessage: String = "",
 ) : UiState
