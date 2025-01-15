@@ -18,7 +18,11 @@
     <fragment
         android:id="@+id/mainScreenFragment"
         android:name="com.example.spiicev2.presentation.mainScreen.MainScreenFragment"
-        android:label="MainScreenFragment" />
+        android:label="MainScreenFragment" >
+        <action
+            android:id="@+id/action_mainScreenFragment_to_logInFragment"
+            app:destination="@id/logInFragment" />
+    </fragment>
     <fragment
         android:id="@+id/signUpFragment"
         android:name="com.example.spiicev2.presentation.signUp.SignUpFragment"
