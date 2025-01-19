@@ -1,8 +1,9 @@
 package com.example.spiicev2.presentation.mainScreen
 
 import android.os.Bundle
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -11,9 +12,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -27,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -73,8 +77,10 @@ private fun MainScreenState(
         state = state,
         logOut = {
             viewModel.logOut()
-            //navController.navigate(R.id.action_mainScreenFragment_to_logInFragment)
         },
+        toNotes = {
+            navController.navigate(R.id.action_mainScreenFragment_to_noteFragment)
+        }
     )
 }
 
@@ -82,6 +88,7 @@ private fun MainScreenState(
 private fun MainScreenScreen(
     state: MainScreenUiState,
     logOut: () -> Unit = {},
+    toNotes: () -> Unit = {},
 ) {
 
     Scaffold()
@@ -90,6 +97,7 @@ private fun MainScreenScreen(
             padding = padding,
             state = state,
             logOut = logOut,
+            toNotes = toNotes,
         )
     }
 }
@@ -100,6 +108,7 @@ private fun MainScreenScreenState(
     padding: PaddingValues = PaddingValues(),
     state: MainScreenUiState,
     logOut: () -> Unit = {},
+    toNotes: () -> Unit = {},
 ) {
     var query by remember { mutableStateOf("") }
     var active by remember { mutableStateOf(false) }
@@ -107,7 +116,11 @@ private fun MainScreenScreenState(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
-    Column()
+    Box(
+        modifier = Modifier
+            .padding(padding)
+            .fillMaxSize()
+    )
     {
         SearchBar(
             modifier = Modifier
@@ -169,13 +182,20 @@ private fun MainScreenScreenState(
                 )
             },
             expanded = active,
-            onExpandedChange = { active = it },
+            onExpandedChange = { active = it }
         ) {
             // Содержимое, отображаемое при активном состоянии
             Text("Результаты поиска появятся здесь.")
         }
-        println("act;ive = $active")
-        println("focusManager = $focusManager")
+
+        FloatingActionButton(
+            onClick = {toNotes()},
+            modifier = Modifier
+                .align(alignment = Alignment.BottomEnd)
+                .padding(16.dp)
+        ) {
+            Icon(Icons.Filled.Add, "Floating action button.")
+        }
     }
 }
 

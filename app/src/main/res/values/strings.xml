@@ -7,4 +7,5 @@
     <string name="signUp">Sign Up</string>
     <string name="signUpToLogIn">Already don\'t have an account? Log In</string>
     <string name="logInToSignUp">Already have an account? Sign Up</string>
+    <string name="noteScreenTitle">Note screen title</string>
 </resources>
