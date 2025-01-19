@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.lifecycle.viewModelScope
 import com.example.spiicev2.data.dataStore.DataStoreManager
 import com.example.spiicev2.presentation.appBase.BaseViewModel
+import com.example.spiicev2.presentation.appBase.NavigationCommand
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -21,6 +22,10 @@ internal class MainScreenViewModel @Inject constructor(
     fun logOut() {
         viewModelScope.launch {
             dataStoreManager.setEmail("")
+            navigateTo(NavigationCommand.GoToLogInScreen)
+            println("empty email = ${dataStoreManager.getEmail()}")
         }
     }
+
+
 }

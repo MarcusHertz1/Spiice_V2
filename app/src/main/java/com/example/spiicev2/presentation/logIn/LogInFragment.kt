@@ -37,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavOptions
 import androidx.navigation.fragment.findNavController
 import com.example.spiicev2.R
 import com.example.spiicev2.data.dataStore.DataStoreManager
@@ -60,14 +59,8 @@ class LogInFragment : BaseFragment() {
             val email = DataStoreManager(requireContext()).getEmail()
             println("email = $email")
             if (!email.isNullOrBlank()) {
-                val navOptions: NavOptions = NavOptions.Builder()
-                    .setPopUpTo(R.id.mainScreenFragment, true)
-                    .build()
-
                 navController.navigate(
-                    R.id.action_logInFragment_to_mainScreenFragment,
-                    null,
-                    navOptions
+                    R.id.action_logInFragment_to_mainScreenFragment
                 )
             }
 
@@ -102,7 +95,9 @@ private fun LogInState( //
                         ).show()
                 }
             }
+    }
 
+    LaunchedEffect(Unit) {
         viewModel.navigationCommands.collect { command ->
             when (command) {
                 is NavigationCommand.GoToMainScreen -> {

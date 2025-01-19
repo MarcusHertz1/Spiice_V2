@@ -68,7 +68,9 @@ private fun SignUpState(
                         ).show()
                 }
             }
+    }
 
+    LaunchedEffect(Unit) {
         viewModel.navigationCommands.collect { command ->
             when (command) {
                 is NavigationCommand.GoToMainScreen -> {

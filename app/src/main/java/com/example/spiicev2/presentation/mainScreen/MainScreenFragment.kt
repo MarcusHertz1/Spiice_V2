@@ -21,6 +21,7 @@ import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -39,6 +40,7 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import com.example.spiicev2.R
 import com.example.spiicev2.presentation.appBase.BaseFragment
+import com.example.spiicev2.presentation.appBase.NavigationCommand
 import com.example.spiicev2.presentation.theme.SpiiceV2Theme
 import kotlinx.coroutines.channels.Channel
 
@@ -56,42 +58,34 @@ private fun MainScreenState(
     viewModel: MainScreenViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    LaunchedEffect(Unit) {
+        viewModel.navigationCommands.collect { command ->
+            when (command) {
+                is NavigationCommand.GoToLogInScreen -> {
+                    navController.navigate(R.id.action_mainScreenFragment_to_logInFragment)
+                }
+
+                else -> {}
+            }
+        }
+    }
     MainScreenScreen(
         state = state,
-        //viewModel = viewModel,
-        logOut = { viewModel.logOut()
-navController.navigate(R.id.action_mainScreenFragment_to_logInFragment)
-                 },
+        logOut = {
+            viewModel.logOut()
+            //navController.navigate(R.id.action_mainScreenFragment_to_logInFragment)
+        },
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainScreenScreen(
     state: MainScreenUiState,
-    //viewModel: MainScreenViewModel,
     logOut: () -> Unit = {},
 ) {
-    /*val textFieldState = rememberTextFieldState()
-    val expanded = remember {
-        mutableStateOf(false)
-    }*/
 
-    Scaffold(
-        /*navigationIcon = {
-            IconButton(
-                onClick = { logOut() },
-                modifier = Modifier
-                    .size(48.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                    contentDescription = "Вернуться назад",
-                )
-            }
-        },
-        title = { },*/
-    ) { padding ->
+    Scaffold()
+    { padding ->
         MainScreenScreenState(
             padding = padding,
             state = state,
@@ -113,11 +107,8 @@ private fun MainScreenScreenState(
     val focusRequester = remember { FocusRequester() }
     val focusManager = LocalFocusManager.current
 
-
-
-    Column(
-
-    ) {
+    Column()
+    {
         SearchBar(
             modifier = Modifier
                 .fillMaxWidth()
@@ -157,7 +148,6 @@ private fun MainScreenScreenState(
                                     contentDescription = "Выйти",
                                 )
                             }
-                            //Icon(Icons.Default.Search, contentDescription = "Иконка поиска")
                         }
                     },
                     trailingIcon = {
