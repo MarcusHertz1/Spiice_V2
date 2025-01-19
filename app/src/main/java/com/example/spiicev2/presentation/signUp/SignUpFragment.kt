@@ -8,7 +8,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -19,6 +21,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,6 +32,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.spiicev2.R
 import com.example.spiicev2.presentation.appBase.BaseFragment
 import com.example.spiicev2.presentation.appBase.NavigationCommand
+import com.example.spiicev2.presentation.appBase.UiProgress
 import com.example.spiicev2.presentation.theme.SpiiceV2Theme
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
@@ -52,16 +56,17 @@ private fun SignUpState(
     val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        snapshotFlow { state.errorMessage }
+        snapshotFlow { state.progress }
             .filterNotNull()
             .collectLatest {
-                if (it.isNotBlank())
-                    Toast.makeText(
-                        context,
-                        it,
-                        Toast.LENGTH_SHORT
-                    )
-                        .show()
+                (it as? UiProgress.Error)?.let { error ->
+                    if (error.type == SignUpErrorType.OtherError)
+                        Toast.makeText(
+                            context,
+                            error.message,
+                            Toast.LENGTH_LONG
+                        ).show()
+                }
             }
 
         viewModel.navigationCommands.collect { command ->
@@ -122,26 +127,56 @@ private fun SignUpScreenState(
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val error = state.progress as? UiProgress.Error
         OutlinedTextField(
             value = state.email,
             onValueChange = { onEmailSet(it) },
-            label = { Text(stringResource(R.string.email)) }
+            label = { Text(stringResource(R.string.email)) },
+            supportingText = {
+                if (error != null && error.type == SignUpErrorType.EmailError)
+                    Text(
+                        text = error.message,
+                        color = Color.Red
+                    )
+            },
+            isError = error != null && error.type == SignUpErrorType.EmailError
         )
         OutlinedTextField(
             value = state.password,
             onValueChange = { onPasswordSet(it) },
-            label = { Text(stringResource(R.string.password)) }
+            label = { Text(stringResource(R.string.password)) },
+            supportingText = {
+                if (error != null && (error.type == SignUpErrorType.PasswordError ||
+                            error.type == SignUpErrorType.PasswordAndConfirmPasswordError)
+                )
+                    Text(
+                        text = error.message,
+                        color = Color.Red
+                    )
+            },
+            isError = error != null && (error.type == SignUpErrorType.PasswordError ||
+                    error.type == SignUpErrorType.PasswordAndConfirmPasswordError)
         )
         OutlinedTextField(
             value = state.confirmPassword,
             onValueChange = { onConfirmPasswordSet(it) },
             label = { Text(stringResource(R.string.confirmPassword)) },
-            supportingText = { Text("error") }
+            supportingText = {
+                if (error != null && error.type == SignUpErrorType.PasswordAndConfirmPasswordError)
+                    Text(
+                        text = error.message,
+                        color = Color.Red
+                    )
+            },
+            isError = error != null && error.type == SignUpErrorType.PasswordAndConfirmPasswordError
         )
         Button(
-            onClick = { onSignUpClick() }
+            onClick = { onSignUpClick() },
+            enabled = state.progress !is UiProgress.Loading
         ) {
-            Text(stringResource(R.string.signUp))
+            if (state.progress !is UiProgress.Loading)
+                Text(stringResource(R.string.signUp))
+            else CircularProgressIndicator(modifier = Modifier.size(20.dp))
         }
         Text(
             modifier = Modifier.clickable {
@@ -159,6 +194,22 @@ private fun SignUpScreenPreview() {
         SignUpScreenState(
             state = SignUpUiState(
                 email = "jhdafgjh"
+            )
+        )
+    }
+}
+
+@Preview(backgroundColor = 0xFFFFFFFF)
+@Composable
+private fun SignUpScreenErrorPreview() {
+    SpiiceV2Theme {
+        SignUpScreenState(
+            state = SignUpUiState(
+                email = "jhdafgjh",
+                progress = UiProgress.Error(
+                    type = SignUpErrorType.EmailError,
+                    message = "Email must not be empty"
+                )
             )
         )
     }
