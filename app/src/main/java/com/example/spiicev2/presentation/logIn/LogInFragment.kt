@@ -8,7 +8,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -16,11 +20,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.lifecycleScope
@@ -32,6 +43,7 @@ import com.example.spiicev2.R
 import com.example.spiicev2.data.dataStore.DataStoreManager
 import com.example.spiicev2.presentation.appBase.BaseFragment
 import com.example.spiicev2.presentation.appBase.NavigationCommand
+import com.example.spiicev2.presentation.appBase.UiProgress
 import com.example.spiicev2.presentation.theme.SpiiceV2Theme
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
@@ -45,22 +57,23 @@ class LogInFragment : BaseFragment() {
         val navController = findNavController()
         lifecycleScope.launch {
 
-                val email = DataStoreManager(requireContext()).getEmail()
-                println("email = $email")
-                if (!email.isNullOrBlank()) {
-                    val navOptions: NavOptions = NavOptions.Builder()
-                        .setPopUpTo(R.id.mainScreenFragment, true)
-                        .build()
+            val email = DataStoreManager(requireContext()).getEmail()
+            println("email = $email")
+            if (!email.isNullOrBlank()) {
+                val navOptions: NavOptions = NavOptions.Builder()
+                    .setPopUpTo(R.id.mainScreenFragment, true)
+                    .build()
 
-                    navController.navigate(
-                        R.id.action_logInFragment_to_mainScreenFragment,
-                        null,
-                        navOptions
-                    )
-                }
+                navController.navigate(
+                    R.id.action_logInFragment_to_mainScreenFragment,
+                    null,
+                    navOptions
+                )
+            }
 
         }
     }
+
     @Composable
     override fun Create(arguments: Bundle?, resultChannel: Channel<Bundle>) {
         val navController = findNavController()
@@ -77,16 +90,17 @@ private fun LogInState( //
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
     LaunchedEffect(Unit) {
-        snapshotFlow { state.errorMessage }
+        snapshotFlow { state.progress }
             .filterNotNull()
             .collectLatest {
-                if (it.isNotBlank())
-                    Toast.makeText(
-                        context,
-                        it,
-                        Toast.LENGTH_SHORT
-                    )
-                        .show()
+                (it as? UiProgress.Error)?.let { error ->
+                    if (error.type == LogInErrorType.OtherError)
+                        Toast.makeText(
+                            context,
+                            error.message,
+                            Toast.LENGTH_LONG
+                        ).show()
+                }
             }
 
         viewModel.navigationCommands.collect { command ->
@@ -149,20 +163,57 @@ private fun LogInScreenState(
         verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        val error = state.progress as? UiProgress.Error
         OutlinedTextField(
             value = state.email,
             onValueChange = { onEmailChange(it) },
-            label = { Text(stringResource(R.string.email)) }
+            label = { Text(stringResource(R.string.email)) },
+            supportingText = {
+                if (error != null && error.type == LogInErrorType.EmailError)
+                    Text(
+                        text = error.message,
+                        color = Color.Red
+                    )
+            },
+            isError = error != null && error.type == LogInErrorType.EmailError
         )
+        var passwordVisibility: Boolean by remember { mutableStateOf(false) }
         OutlinedTextField(
+            visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = {
+                    passwordVisibility = !passwordVisibility
+                }) {
+                    Icon(
+                        painter = painterResource(
+                            if (!passwordVisibility)
+                                R.drawable.eye_outline
+                            else
+                                R.drawable.eye_off_outline
+                        ),
+                        contentDescription = "Show hide password"
+                    )
+                }
+            },
             value = state.password,
             onValueChange = { onPasswordChange(it) },
-            label = { Text(stringResource(R.string.password)) }
+            label = { Text(stringResource(R.string.password)) },
+            supportingText = {
+                if (error != null && error.type == LogInErrorType.PasswordError)
+                    Text(
+                        text = error.message,
+                        color = Color.Red
+                    )
+            },
+            isError = error != null && error.type == LogInErrorType.PasswordError
         )
         Button(
-            onClick = { onLogInClick() }
+            onClick = { onLogInClick() },
+            enabled = state.progress !is UiProgress.Loading
         ) {
-            Text(stringResource(R.string.logIn))
+            if (state.progress !is UiProgress.Loading)
+                Text(stringResource(R.string.logIn))
+            else CircularProgressIndicator(modifier = Modifier.size(20.dp))
         }
         Text(
             modifier = Modifier.clickable {

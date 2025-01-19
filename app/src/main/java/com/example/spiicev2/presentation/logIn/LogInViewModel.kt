@@ -6,6 +6,7 @@ import com.example.spiicev2.data.dataStore.DataStoreManager
 import com.example.spiicev2.domain.useCase.EmailAuthUseCase
 import com.example.spiicev2.presentation.appBase.BaseViewModel
 import com.example.spiicev2.presentation.appBase.NavigationCommand
+import com.example.spiicev2.presentation.appBase.UiProgress
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -28,8 +29,7 @@ internal class LogInViewModel @Inject constructor(
     fun emailChange(email: String) {
         setState {
             copy(
-                email = email,
-                errorMessage = ""
+                email = email
             )
         }
     }
@@ -37,8 +37,7 @@ internal class LogInViewModel @Inject constructor(
     fun passwordChange(password: String) {
         setState {
             copy(
-                password = password,
-                errorMessage = ""
+                password = password
             )
         }
     }
@@ -46,36 +45,65 @@ internal class LogInViewModel @Inject constructor(
     fun logIn() {
         setState {
             copy(
-                errorMessage = ""
+                progress = UiProgress.Loading
             )
         }
         val email = state.value.email
         val password = state.value.password
-        if (email.isNotBlank() && password.isNotBlank()) {
-            emailAuthUseCase.logInWithEmail(
-                email = email,
-                password = password,
-                onSuccess = { user ->
-                    viewModelScope.launch {
-                        dataStoreManager.setEmail(user.email.orEmpty())
-                        navigateTo(NavigationCommand.GoToMainScreen)
-                    }
-                },
-                onError = { error ->
-                    setState {
-                        copy(
-                            errorMessage = "Firebase error: ${error.message}"
+
+        when {
+            email.isBlank() -> {
+                setState {
+                    copy(
+                        progress = UiProgress.Error(
+                            type = LogInErrorType.EmailError,
+                            message = "Email must not be empty"
                         )
-                    }
+                    )
                 }
-            )
-        } else {
-            setState {
-                copy(
-                    errorMessage = "Email and password must not be empty"
+            }
+
+            password.isBlank() -> {
+                setState {
+                    copy(
+                        progress = UiProgress.Error(
+                            type = LogInErrorType.PasswordError,
+                            message = "Password must not be empty"
+                        )
+                    )
+                }
+            }
+
+            else -> {
+                println("email: $email, password: $password")
+                emailAuthUseCase.logInWithEmail(
+                    email = email,
+                    password = password,
+                    onSuccess = { user ->
+                        println("Success")
+                        viewModelScope.launch {
+                            dataStoreManager.setEmail(user.email.orEmpty())
+                            navigateTo(NavigationCommand.GoToMainScreen)
+                            setState {
+                                copy(
+                                    progress = UiProgress.Success
+                                )
+                            }
+                        }
+                    },
+                    onError = { error ->
+                        println("error")
+                        setState {
+                            copy(
+                                progress = UiProgress.Error(
+                                    type = LogInErrorType.OtherError,
+                                    message = "Firebase error: ${error.message}"
+                                )
+                            )
+                        }
+                    }
                 )
             }
         }
-
     }
 }
