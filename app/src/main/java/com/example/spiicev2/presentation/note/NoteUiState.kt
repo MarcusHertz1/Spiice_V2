@@ -6,4 +6,5 @@ import com.example.spiicev2.presentation.appBase.UiState
 @Immutable
 data class NoteUiState(
     val text: String = "",
+    val textSize: Int = 14
 ) : UiState

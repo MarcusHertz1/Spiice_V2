@@ -16,4 +16,20 @@ internal class NoteViewModel @Inject constructor(
             )
         }
     }
+
+    fun incrementTextSize () {
+        setState {
+            copy(
+                textSize = textSize.inc()
+            )
+        }
+    }
+
+    fun decrementTextSize () {
+        setState {
+            copy(
+                textSize = textSize.dec()
+            )
+        }
+    }
 }
