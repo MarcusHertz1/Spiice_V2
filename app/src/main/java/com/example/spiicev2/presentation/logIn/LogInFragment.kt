@@ -203,6 +203,7 @@ private fun LogInScreenState(
             isError = error != null && error.type == LogInErrorType.PasswordError
         )
         Button(
+            modifier = Modifier.padding(top = 15.dp),
             onClick = { onLogInClick() },
             enabled = state.progress !is UiProgress.Loading
         ) {

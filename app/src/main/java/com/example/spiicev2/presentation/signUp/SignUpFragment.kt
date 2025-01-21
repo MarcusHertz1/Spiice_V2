@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.OutlinedTextField
@@ -26,6 +27,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
@@ -172,7 +174,15 @@ private fun SignUpScreenState(
             },
             isError = error != null && error.type == SignUpErrorType.PasswordAndConfirmPasswordError
         )
+
+        Text(
+            modifier = Modifier.width(280.dp),
+            fontSize = 14.sp,
+            text = stringResource(R.string.passwordInfo)
+        )
+
         Button(
+            modifier = Modifier.padding(top = 15.dp),
             onClick = { onSignUpClick() },
             enabled = state.progress !is UiProgress.Loading
         ) {

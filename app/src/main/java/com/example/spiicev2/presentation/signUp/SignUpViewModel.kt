@@ -50,6 +50,15 @@ internal class SignUpViewModel @Inject constructor(
         }
     }
 
+    private fun checkEmail(email: String): Boolean {
+        return email.matches("[A-Za-z\\d._%+-]+@[A-Za-z\\d.-]+\\.[A-Za-z]{2,6}".toRegex())
+    }
+
+    private fun checkPassword(password: String): Boolean {
+        return password.matches("^(?=.*\\d)(?=.*[a-z])(?=.*[A-Z]).{6,50}\$".toRegex()
+        )
+    }
+
     fun signUp() {
         setState {
             copy(
@@ -72,12 +81,34 @@ internal class SignUpViewModel @Inject constructor(
                 }
             }
 
+            !checkEmail(email) -> {
+                setState {
+                    copy(
+                        progress = UiProgress.Error(
+                            type = SignUpErrorType.EmailError,
+                            message = "Incorrect email"
+                        )
+                    )
+                }
+            }
+
             password.isBlank() -> {
                 setState {
                     copy(
                         progress = UiProgress.Error(
                             type = SignUpErrorType.PasswordError,
                             message = "Password must not be empty"
+                        )
+                    )
+                }
+            }
+
+            !checkPassword(password) -> {
+                setState {
+                    copy(
+                        progress = UiProgress.Error(
+                            type = SignUpErrorType.PasswordError,
+                            message = "Incorrect password"
                         )
                     )
                 }
