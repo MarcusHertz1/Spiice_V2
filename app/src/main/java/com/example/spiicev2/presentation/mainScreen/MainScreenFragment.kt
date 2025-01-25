@@ -1,6 +1,7 @@
 package com.example.spiicev2.presentation.mainScreen
 
 import android.os.Bundle
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.CardDefaults
@@ -38,6 +40,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -233,7 +236,8 @@ private fun MainScreenScreenState(
                 Text(
                     text = stringResource(R.string.noNotes),
                     color = Color.Gray,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier
+                        .fillMaxSize()
                         .wrapContentHeight()
                         .padding(horizontal = 12.dp),
                     textAlign = TextAlign.Center
@@ -266,6 +270,13 @@ private fun MainScreenScreenState(
                         onLongPress = {
                             actionHandler(
                                 MainScreenActions.AddToChecked(
+                                    id = note.id
+                                )
+                            )
+                        },
+                        onClickDelete = {
+                            actionHandler(
+                                MainScreenActions.DeleteSingleChecked(
                                     id = note.id
                                 )
                             )
@@ -307,64 +318,87 @@ private fun Note(
     noteData: NoteData,
     state: MainScreenUiState,
     onCheckedChange: (Boolean) -> Unit = {},
-    onLongPress: () -> Unit = {}
+    onLongPress: () -> Unit = {},
+    onClickDelete: () -> Unit = {}
 ) {
-    ElevatedCard(
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 6.dp
-        ),
-        modifier = modifier
-            .fillMaxWidth()
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onLongPress = {
-                        onLongPress()
-                    }
-                )
-            },
+    var offsetX by remember { mutableFloatStateOf(0f) }
+
+    Box (
+        modifier = Modifier.fillMaxWidth().pointerInput(Unit) {
+            detectHorizontalDragGestures { _, dragAmount ->
+                offsetX = (offsetX + dragAmount).coerceIn(-300f, 0f)
+            }
+        }
     ) {
         Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .wrapContentHeight(),
+            horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            if (state.checkedNotes.isNotEmpty()) {
-                val isChecked = state.checkedNotes.contains(noteData.id)
-                Checkbox(
-                    checked = isChecked,
-                    onCheckedChange = { onCheckedChange(isChecked) }
-                )
+            IconButton(onClick = onClickDelete) {
+                Icon(Icons.Default.Delete, contentDescription = "")
             }
-            Column(
-                verticalArrangement = Arrangement.spacedBy(16.dp),
-                modifier = Modifier
-                    .padding(16.dp)
+        }
+        ElevatedCard(
+            elevation = CardDefaults.cardElevation(
+                defaultElevation = 6.dp
+            ),
+            modifier = modifier
+                .fillMaxWidth()
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onLongPress = {
+                            onLongPress()
+                        }
+                    )
+                },
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                if (state.checkedNotes.isNotEmpty()) {
+                    val isChecked = state.checkedNotes.contains(noteData.id)
+                    Checkbox(
+                        checked = isChecked,
+                        onCheckedChange = { onCheckedChange(isChecked) }
+                    )
+                }
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .padding(16.dp)
                 ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = noteData.title.ifBlank { stringResource(R.string.emptyTitle) },
+                            modifier = Modifier
+                                .weight(1f),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        if (noteData.lastEditDate > 0)
+                            Text(
+                                text = noteData.lastEditDate.toDate(),
+                                fontSize = 14.sp,
+                            )
+                    }
                     Text(
-                        text = noteData.title.ifBlank { stringResource(R.string.emptyTitle) },
-                        modifier = Modifier
-                            .weight(1f),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        maxLines = 1,
+                        text = noteData.text,
+                        modifier = Modifier,
+                        fontSize = 14.sp,
+                        maxLines = 3,
                         overflow = TextOverflow.Ellipsis
                     )
-                    if (noteData.lastEditDate > 0)
-                        Text(
-                            text = noteData.lastEditDate.toDate(),
-                            fontSize = 14.sp,
-                        )
                 }
-                Text(
-                    text = noteData.text,
-                    modifier = Modifier,
-                    fontSize = 14.sp,
-                    maxLines = 3,
-                    overflow = TextOverflow.Ellipsis
-                )
             }
         }
     }
@@ -379,7 +413,7 @@ private sealed interface MainScreenActions {
     data class DeleteSingleChecked(val id: String) : MainScreenActions
 }
 
-@Preview(backgroundColor = 0xFFFFFFFF)
+/*@Preview(backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun MainScreenScreenPreview() {
     SpiiceV2Theme {
@@ -387,7 +421,7 @@ private fun MainScreenScreenPreview() {
             state = MainScreenUiState()
         )
     }
-}
+}*/
 
 @Preview(backgroundColor = 0xFFFFFFFF)
 @Composable
