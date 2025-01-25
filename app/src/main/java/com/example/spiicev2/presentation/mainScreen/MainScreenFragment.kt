@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -44,6 +46,9 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.isTraversalGroup
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
@@ -88,11 +93,21 @@ private fun MainScreenState(
     }
     MainScreenScreen(
         state = state,
-        logOut = {
-            viewModel.logOut()
-        },
-        toNotes = {
-            navController.navigate(R.id.action_mainScreenFragment_to_noteFragment)
+        actionHandler = remember {
+            { action ->
+                when (action) {
+                    is MainScreenActions.LogOut -> viewModel.logOut()
+                    is MainScreenActions.ToNote -> navController.navigate(R.id.action_mainScreenFragment_to_noteFragment)
+                    is MainScreenActions.ChangeChecked -> viewModel.changeChecked(
+                        id = action.id,
+                        isChecked = action.isChecked
+                    )
+
+                    is MainScreenActions.AddToChecked -> viewModel.addToChecked(
+                        id = action.id
+                    )
+                }
+            }
         }
     )
 }
@@ -100,8 +115,7 @@ private fun MainScreenState(
 @Composable
 private fun MainScreenScreen(
     state: MainScreenUiState,
-    logOut: () -> Unit = {},
-    toNotes: () -> Unit = {},
+    actionHandler: (MainScreenActions) -> Unit = {}
 ) {
 
     Scaffold()
@@ -109,8 +123,7 @@ private fun MainScreenScreen(
         MainScreenScreenState(
             padding = padding,
             state = state,
-            logOut = logOut,
-            toNotes = toNotes,
+            actionHandler = actionHandler
         )
     }
 }
@@ -119,9 +132,9 @@ private fun MainScreenScreen(
 @Composable
 private fun MainScreenScreenState(
     padding: PaddingValues = PaddingValues(),
+
     state: MainScreenUiState,
-    logOut: () -> Unit = {},
-    toNotes: () -> Unit = {},
+    actionHandler: (MainScreenActions) -> Unit = {}
 ) {
     var query by remember { mutableStateOf("") }
     var active by remember { mutableStateOf(false) }
@@ -135,74 +148,108 @@ private fun MainScreenScreenState(
             .fillMaxSize()
     )
     {
-        SearchBar(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            inputField = {
-                TextField(
-                    modifier = Modifier
-                        .focusRequester(focusRequester)
-                        .onFocusChanged { focusState ->
-                            active = focusState.isFocused
-                        },
-                    value = query,
-                    onValueChange = { query = it },
-                    placeholder = { Text("Поиск...") },
-                    singleLine = true,
-                    leadingIcon = {
-                        if (active) {
-                            IconButton(
-                                onClick = {
-                                    active = false
-                                    focusManager.clearFocus()
+        Box(Modifier
+            .fillMaxSize()
+            .semantics { isTraversalGroup = true }) {
+            SearchBar(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .semantics { traversalIndex = 0f },
+                inputField = {
+                    TextField(
+                        modifier = Modifier
+                            .focusRequester(focusRequester)
+                            .onFocusChanged { focusState ->
+                                active = focusState.isFocused
+                            },
+                        value = query,
+                        onValueChange = { query = it },
+                        placeholder = { Text("Поиск...") },
+                        singleLine = true,
+                        leadingIcon = {
+                            if (active) {
+                                IconButton(
+                                    onClick = {
+                                        active = false
+                                        focusManager.clearFocus()
+                                    }
+                                ) {
+                                    Icon(
+                                        Icons.AutoMirrored.Outlined.ArrowBack,
+                                        contentDescription = "Назад"
+                                    )
                                 }
-                            ) {
-                                Icon(
-                                    Icons.AutoMirrored.Outlined.ArrowBack,
-                                    contentDescription = "Назад"
-                                )
+                            } else {
+                                IconButton(
+                                    onClick = { actionHandler(MainScreenActions.LogOut) },
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                                        contentDescription = "Выйти",
+                                    )
+                                }
                             }
-                        } else {
-                            IconButton(
-                                onClick = { logOut() },
-                                modifier = Modifier
-                                    .size(48.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                                    contentDescription = "Выйти",
-                                )
+                        },
+                        trailingIcon = {
+                            if (query.isNotEmpty()) {
+                                IconButton(onClick = { query = "" }) {
+                                    Icon(Icons.Default.Close, contentDescription = "Очистить поиск")
+                                }
                             }
-                        }
-                    },
-                    trailingIcon = {
-                        if (query.isNotEmpty()) {
-                            IconButton(onClick = { query = "" }) {
-                                Icon(Icons.Default.Close, contentDescription = "Очистить поиск")
+                        },
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            imeAction = ImeAction.Search
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onSearch = {
+                                active = false
+                                focusManager.clearFocus()
                             }
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        imeAction = ImeAction.Search
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onSearch = {
-                            active = false
-                            focusManager.clearFocus()
+                        )
+                    )
+                },
+                expanded = active,
+                onExpandedChange = { active = it }
+            ) {
+                // Содержимое, отображаемое при активном состоянии
+                Text("Результаты поиска появятся здесь.")
+            }
+
+            LazyColumn(
+                modifier = Modifier
+                    .semantics { traversalIndex = 1f },
+                contentPadding = PaddingValues(
+                    start = 8.dp,
+                    top = 85.dp,
+                    end = 8.dp,
+                    bottom = 8.dp
+                ),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                items(state.data) { note ->
+                    Note(
+                        noteData = note,
+                        state = state,
+                        onCheckedChange = {
+                            actionHandler(MainScreenActions.ChangeChecked(
+                                id = note.id,
+                                isChecked = it
+                            ))
+                        },
+                        onLongPress = {
+                            actionHandler(MainScreenActions.AddToChecked(
+                                id = note.id
+                            ))
                         }
                     )
-                )
-            },
-            expanded = active,
-            onExpandedChange = { active = it }
-        ) {
-            // Содержимое, отображаемое при активном состоянии
-            Text("Результаты поиска появятся здесь.")
+                }
+            }
         }
-
         FloatingActionButton(
-            onClick = { toNotes() },
+            onClick = { actionHandler(MainScreenActions.ToNote) },
             modifier = Modifier
                 .align(alignment = Alignment.BottomEnd)
                 .padding(16.dp)
@@ -281,7 +328,14 @@ private fun Note(
     }
 }
 
-/*@Preview(backgroundColor = 0xFFFFFFFF)
+private sealed interface MainScreenActions {
+    data object LogOut : MainScreenActions
+    data object ToNote : MainScreenActions
+    data class AddToChecked(val id: String) : MainScreenActions
+    data class ChangeChecked(val id: String, val isChecked: Boolean) : MainScreenActions
+}
+
+@Preview(backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun MainScreenScreenPreview() {
     SpiiceV2Theme {
@@ -289,7 +343,7 @@ private fun MainScreenScreenPreview() {
             state = MainScreenUiState()
         )
     }
-}*/
+}
 
 @Preview(backgroundColor = 0xFFFFFFFF)
 @Composable
