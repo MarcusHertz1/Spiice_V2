@@ -6,4 +6,5 @@ import com.example.spiicev2.presentation.appBase.UiState
 @Immutable
 data class MainScreenUiState(
     val email: String = "",
+    val checkedNotes: List<String> = emptyList()
 ) : UiState

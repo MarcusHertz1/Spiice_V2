@@ -83,9 +83,13 @@ dependencies {
     implementation(libs.google.firebase.auth)
     implementation(libs.google.firebase.analytics)
 
+    //Firestore
+    implementation (libs.firebase.firestore)
+
     //DataStore
     implementation (libs.androidx.datastore.preferences)
     implementation(libs.kotlinx.serialization.json)
 
     implementation(libs.material3)
+    implementation(libs.kotlinx.datetime)
 }
