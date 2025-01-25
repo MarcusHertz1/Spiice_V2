@@ -10,4 +10,6 @@
     <string name="noteScreenTitle">Note screen title</string>
     <string name="passwordInfo">The password needs 1 digit, 1 lowercase, 1 uppercase, and 6–50 characters.</string>
     <string name="emptyTitle">Empty title</string>
+    <string name="deleteAllChecked">Delete</string>
+    <string name="noNotes">Add notes to appear here</string>
 </resources>

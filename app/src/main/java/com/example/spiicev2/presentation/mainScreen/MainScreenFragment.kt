@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardActions
@@ -20,6 +21,8 @@ import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ElevatedCard
@@ -43,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -51,6 +55,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -106,6 +111,12 @@ private fun MainScreenState(
                     is MainScreenActions.AddToChecked -> viewModel.addToChecked(
                         id = action.id
                     )
+
+                    is MainScreenActions.DeleteSingleChecked -> viewModel.deleteSingleNote(
+                        id = action.id
+                    )
+
+                    is MainScreenActions.DeleteAllChecked -> viewModel.deleteCheckedNotes()
                 }
             }
         }
@@ -218,6 +229,17 @@ private fun MainScreenScreenState(
                 Text("Результаты поиска появятся здесь.")
             }
 
+            if (state.data.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.noNotes),
+                    color = Color.Gray,
+                    modifier = Modifier.fillMaxSize()
+                        .wrapContentHeight()
+                        .padding(horizontal = 12.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+
             LazyColumn(
                 modifier = Modifier
                     .semantics { traversalIndex = 1f },
@@ -234,15 +256,19 @@ private fun MainScreenScreenState(
                         noteData = note,
                         state = state,
                         onCheckedChange = {
-                            actionHandler(MainScreenActions.ChangeChecked(
-                                id = note.id,
-                                isChecked = it
-                            ))
+                            actionHandler(
+                                MainScreenActions.ChangeChecked(
+                                    id = note.id,
+                                    isChecked = it
+                                )
+                            )
                         },
                         onLongPress = {
-                            actionHandler(MainScreenActions.AddToChecked(
-                                id = note.id
-                            ))
+                            actionHandler(
+                                MainScreenActions.AddToChecked(
+                                    id = note.id
+                                )
+                            )
                         }
                     )
                 }
@@ -256,6 +282,22 @@ private fun MainScreenScreenState(
         ) {
             Icon(Icons.Filled.Add, "Floating action button.")
         }
+        if (state.checkedNotes.isNotEmpty())
+            Button(
+                onClick = {
+                    actionHandler(MainScreenActions.DeleteAllChecked)
+                },
+                colors = ButtonColors(
+                    containerColor = Color.Red,
+                    contentColor = Color.White,
+                    disabledContainerColor = Color.Gray,
+                    disabledContentColor = Color.White,
+                )
+            ) {
+                Text(
+                    stringResource(R.string.deleteAllChecked)
+                )
+            }
     }
 }
 
@@ -333,6 +375,8 @@ private sealed interface MainScreenActions {
     data object ToNote : MainScreenActions
     data class AddToChecked(val id: String) : MainScreenActions
     data class ChangeChecked(val id: String, val isChecked: Boolean) : MainScreenActions
+    data object DeleteAllChecked : MainScreenActions
+    data class DeleteSingleChecked(val id: String) : MainScreenActions
 }
 
 @Preview(backgroundColor = 0xFFFFFFFF)
