@@ -1,7 +1,10 @@
 package com.example.spiicev2.presentation.note
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
+import com.example.spiicev2.domain.repository.NoteData
 import com.example.spiicev2.domain.repository.NotePostRepository
+import com.example.spiicev2.presentation.appBase.Arguments.NOTE_DATA
 import com.example.spiicev2.presentation.appBase.BaseViewModel
 import com.example.spiicev2.presentation.appBase.NavigationCommand
 import com.example.spiicev2.presentation.appBase.UiProgress
@@ -12,9 +15,24 @@ import javax.inject.Inject
 
 @HiltViewModel
 internal class NoteViewModel @Inject constructor(
-    private val notePostRepository: NotePostRepository
+    private val notePostRepository: NotePostRepository,
+    savedStateHandle: SavedStateHandle
 ) : BaseViewModel<NoteUiState>() {
     override fun createInitialState() = NoteUiState()
+
+    private val noteData by lazy {
+        savedStateHandle.get<NoteData?>(NOTE_DATA)
+    }
+
+    init {
+        noteData?.let {
+            setState {
+                copy (
+                    data = it
+                )
+            }
+        }
+    }
 
     fun setText(text: String) {
         setState {
@@ -55,7 +73,11 @@ internal class NoteViewModel @Inject constructor(
             )
         }
         viewModelScope.launch {
-            val result = notePostRepository.addNotePost(state.value.data.copy(lastEditDate = System.currentTimeMillis()))
+            val data = state.value.data
+            val result =
+                if(data.id.isBlank())
+                    notePostRepository.addNotePost(data.copy(lastEditDate = System.currentTimeMillis()))
+            else notePostRepository.updateNotePost(data.id, data)
             if (result.isSuccess) navigateTo(NavigationCommand.GoToMainScreen)
             else if(result.isFailure) setState {
                 copy (

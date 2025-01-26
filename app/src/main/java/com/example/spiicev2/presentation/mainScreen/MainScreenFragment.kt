@@ -3,6 +3,8 @@ package com.example.spiicev2.presentation.mainScreen
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.core.Animatable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -13,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -44,7 +47,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -67,6 +69,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -75,14 +78,19 @@ import androidx.navigation.fragment.findNavController
 import com.example.spiicev2.R
 import com.example.spiicev2.domain.Converters.toDate
 import com.example.spiicev2.domain.repository.NoteData
+import com.example.spiicev2.presentation.appBase.Arguments.NOTE_DATA
 import com.example.spiicev2.presentation.appBase.BaseFragment
 import com.example.spiicev2.presentation.appBase.NavigationCommand
 import com.example.spiicev2.presentation.appBase.UiProgress
 import com.example.spiicev2.presentation.logIn.LogInErrorType
 import com.example.spiicev2.presentation.theme.SpiiceV2Theme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 class MainScreenFragment : BaseFragment() {
     @Composable
@@ -128,7 +136,7 @@ private fun MainScreenState(
     }
 
     BackHandler {
-        if(viewModel.onBackPressed()) navController.popBackStack()
+        if (viewModel.onBackPressed()) navController.popBackStack()
     }
 
     MainScreenScreen(
@@ -137,7 +145,12 @@ private fun MainScreenState(
             { action ->
                 when (action) {
                     is MainScreenActions.LogOut -> viewModel.logOut()
-                    is MainScreenActions.ToNote -> navController.navigate(R.id.action_mainScreenFragment_to_noteFragment)
+                    is MainScreenActions.ToNote -> navController.navigate(
+                        R.id.action_mainScreenFragment_to_noteFragment,
+                        Bundle().apply {
+                            putParcelable(NOTE_DATA, action.data)
+                        })
+
                     is MainScreenActions.ChangeChecked -> viewModel.changeChecked(
                         id = action.id,
                         isChecked = action.isChecked
@@ -320,13 +333,20 @@ private fun MainScreenScreenState(
                                     id = note.id
                                 )
                             )
+                        },
+                        onPress = {
+                            actionHandler(
+                                MainScreenActions.ToNote(
+                                    data = note
+                                )
+                            )
                         }
                     )
                 }
             }
         }
         FloatingActionButton(
-            onClick = { actionHandler(MainScreenActions.ToNote) },
+            onClick = { actionHandler(MainScreenActions.ToNote(null)) },
             modifier = Modifier
                 .align(alignment = Alignment.BottomEnd)
                 .padding(16.dp)
@@ -368,18 +388,15 @@ private fun Note(
     state: MainScreenUiState,
     onCheckedChange: (Boolean) -> Unit = {},
     onLongPress: () -> Unit = {},
-    onClickDelete: () -> Unit = {}
+    onClickDelete: () -> Unit = {},
+    onPress: () -> Unit = {}
 ) {
-    var offsetX by remember { mutableFloatStateOf(0f) }
+    val offsetXAnim = remember { Animatable(0f) }
 
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .pointerInput(Unit) {
-                detectHorizontalDragGestures { _, dragAmount ->
-                    offsetX = (offsetX + dragAmount).coerceIn(-300f, 0f)
-                }
-            }
+            .wrapContentHeight()
     ) {
         Row(
             modifier = Modifier
@@ -389,7 +406,12 @@ private fun Note(
             horizontalArrangement = Arrangement.End,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            IconButton(onClick = onClickDelete) {
+            IconButton(onClick = {
+                CoroutineScope(Dispatchers.Main).launch {
+                    onClickDelete()
+                    offsetXAnim.snapTo(0f)
+                }
+            }) {
                 Icon(Icons.Default.Delete, contentDescription = "")
             }
         }
@@ -398,6 +420,7 @@ private fun Note(
                 defaultElevation = 6.dp
             ),
             modifier = modifier
+                .offset { IntOffset(offsetXAnim.value.roundToInt(), 0) }
                 .fillMaxWidth()
                 .pointerInput(Unit) {
                     detectTapGestures(
@@ -405,6 +428,16 @@ private fun Note(
                             onLongPress()
                         }
                     )
+                }
+                .pointerInput(Unit) {
+                    detectHorizontalDragGestures { _, dragAmount ->
+                        CoroutineScope(Dispatchers.Main).launch {
+                            offsetXAnim.snapTo((offsetXAnim.value + dragAmount).coerceIn(-200f, 0f))
+                        }
+                    }
+                }
+                .clickable {
+                    onPress()
                 },
         ) {
             Row(
@@ -457,7 +490,7 @@ private fun Note(
 
 private sealed interface MainScreenActions {
     data object LogOut : MainScreenActions
-    data object ToNote : MainScreenActions
+    data class ToNote(val data: NoteData?) : MainScreenActions
     data class AddToChecked(val id: String) : MainScreenActions
     data class ChangeChecked(val id: String, val isChecked: Boolean) : MainScreenActions
     data object DeleteAllChecked : MainScreenActions
