@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
+import com.example.spiicev2.MainActivity
 import com.example.spiicev2.R
 import com.example.spiicev2.domain.Converters.toDate
 import com.example.spiicev2.domain.repository.NoteData
@@ -96,14 +97,17 @@ class MainScreenFragment : BaseFragment() {
     @Composable
     override fun Create(arguments: Bundle?, resultChannel: Channel<Bundle>) {
         val navController = findNavController()
-        MainScreenState(navController)
+        MainScreenState(navController){
+            (activity as? MainActivity)?.finish()
+        }
     }
 }
 
 @Composable
 private fun MainScreenState(
     navController: NavController,
-    viewModel: MainScreenViewModel = viewModel()
+    viewModel: MainScreenViewModel = viewModel(),
+    finishActivity: () -> Unit
 ) {
     val state by viewModel.state.collectAsState()
     val context = LocalContext.current
@@ -136,7 +140,7 @@ private fun MainScreenState(
     }
 
     BackHandler {
-        if (viewModel.onBackPressed()) navController.popBackStack()
+        if (viewModel.onBackPressed()) finishActivity()
     }
 
     MainScreenScreen(
