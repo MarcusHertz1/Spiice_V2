@@ -54,6 +54,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -88,8 +89,6 @@ import com.example.spiicev2.presentation.appBase.NavigationCommand
 import com.example.spiicev2.presentation.appBase.UiProgress
 import com.example.spiicev2.presentation.logIn.LogInErrorType
 import com.example.spiicev2.presentation.theme.SpiiceV2Theme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filterNotNull
@@ -250,7 +249,7 @@ private fun MainScreenScreenState(
                         contentDescription = "Выйти",
                     )
                 }
-                TextField(
+                if (state.data.isNotEmpty()) TextField(
                     colors = TextFieldDefaults.colors(
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
@@ -305,7 +304,7 @@ private fun MainScreenScreenState(
                     )
                 )
                 var expanded by remember { mutableStateOf(false) }
-                Box {
+                if (state.data.isNotEmpty()) Box {
                     IconButton(
                         onClick = { expanded = !expanded },
                         modifier = Modifier
@@ -393,7 +392,12 @@ private fun MainScreenScreenState(
                 LazyColumn(
                     modifier = Modifier
                         .fillMaxSize(),
-                    contentPadding = PaddingValues(8.dp),
+                    contentPadding = PaddingValues(
+                        start = 8.dp,
+                        end = 8.dp,
+                        top = 8.dp,
+                        bottom = 80.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     items(data) { note ->
@@ -508,29 +512,21 @@ private fun Note(
     onPress: () -> Unit = {}
 ) {
     val offsetXAnim = remember { Animatable(0f) }
+    val scope = rememberCoroutineScope()
 
     Box(
         modifier = Modifier
-            .fillMaxWidth()
-            .wrapContentHeight()
+            .fillMaxWidth(),
+        contentAlignment = Alignment.CenterEnd
     ) {
-        Row(
+        Icon(
+            imageVector = Icons.Default.Delete,
+            contentDescription = "",
+            tint = Color.Red,
             modifier = Modifier
-                .fillMaxWidth()
+                .wrapContentHeight()
                 .padding(horizontal = 16.dp)
-                .wrapContentHeight(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = {
-                CoroutineScope(Dispatchers.Main).launch {
-                    onClickDelete()
-                    offsetXAnim.snapTo(0f)
-                }
-            }) {
-                Icon(Icons.Default.Delete, contentDescription = "")
-            }
-        }
+        )
         ElevatedCard(
             elevation = CardDefaults.cardElevation(
                 defaultElevation = 6.dp
@@ -542,18 +538,39 @@ private fun Note(
                     detectTapGestures(
                         onLongPress = {
                             onLongPress()
+                        },
+                        onTap = {
+                            onPress()
                         }
                     )
                 }
                 .pointerInput(Unit) {
-                    detectHorizontalDragGestures { _, dragAmount ->
-                        CoroutineScope(Dispatchers.Main).launch {
-                            offsetXAnim.snapTo((offsetXAnim.value + dragAmount).coerceIn(-200f, 0f))
+                    detectHorizontalDragGestures(
+                        onHorizontalDrag = { _, dragAmount ->
+                            // Используем корутину для вызова `snapTo`
+                            scope.launch {
+                                scope.launch {
+                                    offsetXAnim.snapTo(
+                                        (offsetXAnim.value + dragAmount).coerceIn(
+                                            -200f,
+                                            0f
+                                        )
+                                    )
+                                }
+                            }
+                        },
+                        onDragEnd = {
+                            // Также обрабатываем завершение жеста внутри корутины
+                            scope.launch {
+                                if (offsetXAnim.value < -100f) {
+                                    onClickDelete()
+                                    offsetXAnim.snapTo(0f)
+                                } else {
+                                    offsetXAnim.animateTo(0f)
+                                }
+                            }
                         }
-                    }
-                }
-                .clickable {
-                    onPress()
+                    )
                 },
         ) {
             Row(

@@ -32,6 +32,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
+import com.example.spiicev2.R
 import com.example.spiicev2.presentation.appBase.BaseFragment
 import com.example.spiicev2.presentation.appBase.NavigationCommand
 import com.example.spiicev2.presentation.appBase.UiProgress
@@ -100,7 +102,7 @@ private fun NoteScreen(
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Outlined.ArrowBack,
-                    contentDescription = "Вернуться назад",
+                    contentDescription = "Go back",
                 )
             }
         }, title = {
@@ -112,10 +114,11 @@ private fun NoteScreen(
                 modifier = Modifier.fillMaxWidth(),
                 decorationBox = { innerTextField ->
                     if (state.data.title.isBlank()) {
-                        Text("Введите название...", color = Color.Gray, fontSize = 18.sp)
+                        Text(stringResource(R.string.enterTitle), color = Color.Gray, fontSize = 18.sp)
                     }
                     innerTextField()
-                }
+                },
+                textStyle = TextStyle.Default.copy(fontSize = 18.sp)
             )
         }, actions = {
             IconButton(
@@ -125,7 +128,7 @@ private fun NoteScreen(
             ) {
                 Icon(
                     imageVector = Icons.Outlined.Check,
-                    contentDescription = "Сохранить",
+                    contentDescription = "Save",
                 )
             }
         })
@@ -204,7 +207,7 @@ private fun NoteScreenState(
             modifier = Modifier.fillMaxSize(),
             decorationBox = { innerTextField ->
                 if (state.data.text.isBlank()) {
-                    Text("Введите текст...", color = Color.Gray, fontSize = 18.sp)
+                    Text(stringResource(R.string.enterText), color = Color.Gray, fontSize = state.textSize.sp)
                 }
                 innerTextField()
             },

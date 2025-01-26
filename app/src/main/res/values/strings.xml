@@ -16,4 +16,6 @@
     <string name="byDate">By date</string>
     <string name="byTitle">By title</string>
     <string name="search">Search…</string>
+    <string name="enterTitle">Enter title…</string>
+    <string name="enterText">Enter text…</string>
 </resources>

@@ -9,6 +9,7 @@ import com.example.spiicev2.presentation.appBase.NavigationCommand
 import com.example.spiicev2.presentation.appBase.UiProgress
 import com.example.spiicev2.presentation.logIn.LogInErrorType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -55,8 +56,10 @@ internal class MainScreenViewModel @Inject constructor(
         filterData()
     }
 
+    private var getAllNotesJob: Job? = null
     fun getAllNotes() {
-        viewModelScope.launch {
+        getAllNotesJob?.cancel()
+        getAllNotesJob = viewModelScope.launch {
             setState {
                 copy(
                     progress = UiProgress.Loading
@@ -160,7 +163,7 @@ internal class MainScreenViewModel @Inject constructor(
             is Sort.ByTitle -> if (sort.increment) result.sortedBy { it.title }
             else result.sortedByDescending { it.title }
 
-            is Sort.ByDate -> if (sort.increment) result.sortedBy { it.lastEditDate }
+            is Sort.ByDate -> if (!sort.increment) result.sortedBy { it.lastEditDate }
             else result.sortedByDescending { it.lastEditDate }
         }
 
