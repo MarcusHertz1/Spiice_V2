@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -29,6 +30,7 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.CardDefaults
@@ -39,9 +41,9 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -60,10 +62,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.isTraversalGroup
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
@@ -166,6 +166,9 @@ private fun MainScreenState(
 
                     is MainScreenActions.DeleteAllChecked -> viewModel.deleteCheckedNotes()
                     is MainScreenActions.GetAllNotes -> viewModel.getAllNotes()
+                    is MainScreenActions.SetSearchValue -> viewModel.setSearchValue(
+                        text = action.text
+                    )
                 }
             }
         }
@@ -204,7 +207,6 @@ private fun MainScreenScreenState(
     state: MainScreenUiState,
     actionHandler: (MainScreenActions) -> Unit = {}
 ) {
-    var query by remember { mutableStateOf("") }
     var active by remember { mutableStateOf(false) }
 
     val focusRequester = remember { FocusRequester() }
@@ -215,74 +217,89 @@ private fun MainScreenScreenState(
             .fillMaxSize()
     )
     {
-        Box(Modifier
-            .fillMaxSize()
-            .semantics { isTraversalGroup = true }) {
-            SearchBar(
+        Column(
+            Modifier
+                .fillMaxSize()
+        ) {
+            Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp)
-                    .semantics { traversalIndex = 0f },
-                inputField = {
-                    TextField(
-                        modifier = Modifier
-                            .focusRequester(focusRequester)
-                            .onFocusChanged { focusState ->
-                                active = focusState.isFocused
-                            },
-                        value = query,
-                        onValueChange = { query = it },
-                        placeholder = { Text("Поиск...") },
-                        singleLine = true,
-                        leadingIcon = {
-                            if (active) {
-                                IconButton(
-                                    onClick = {
-                                        active = false
-                                        focusManager.clearFocus()
-                                    }
-                                ) {
-                                    Icon(
-                                        Icons.AutoMirrored.Outlined.ArrowBack,
-                                        contentDescription = "Назад"
-                                    )
-                                }
-                            } else {
-                                IconButton(
-                                    onClick = { actionHandler(MainScreenActions.LogOut) },
-                                    modifier = Modifier
-                                        .size(48.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-                                        contentDescription = "Выйти",
-                                    )
-                                }
-                            }
-                        },
-                        trailingIcon = {
-                            if (query.isNotEmpty()) {
-                                IconButton(onClick = { query = "" }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Очистить поиск")
-                                }
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions.Default.copy(
-                            imeAction = ImeAction.Search
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onSearch = {
-                                active = false
-                                focusManager.clearFocus()
-                            }
-                        )
-                    )
-                },
-                expanded = active,
-                onExpandedChange = { active = it }
+                    .padding(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Содержимое, отображаемое при активном состоянии
-                Text("Результаты поиска появятся здесь.")
+                IconButton(
+                    onClick = { actionHandler(MainScreenActions.LogOut) },
+                    modifier = Modifier
+                        .size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+                        contentDescription = "Выйти",
+                    )
+                }
+                TextField(
+                    colors = TextFieldDefaults.colors(
+                        focusedIndicatorColor = Color.Transparent,
+                        unfocusedIndicatorColor = Color.Transparent,
+                        disabledIndicatorColor = Color.Transparent
+                    ),
+                    modifier = Modifier
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { focusState ->
+                            active = focusState.isFocused
+                        }
+                        .weight(1f),
+                    shape = RoundedCornerShape(30.dp),
+                    value = state.searchValue,
+                    onValueChange = { actionHandler(MainScreenActions.SetSearchValue(it)) },
+                    placeholder = { Text("Поиск...") },
+                    singleLine = true,
+                    leadingIcon = {
+                        if (active) {
+                            IconButton(
+                                onClick = {
+                                    active = false
+                                    focusManager.clearFocus()
+                                }
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Outlined.ArrowBack,
+                                    contentDescription = "Назад"
+                                )
+                            }
+                        } else {
+                            Icon(
+                                imageVector = Icons.Outlined.Search,
+                                contentDescription = "Поиск",
+                            )
+                        }
+                    },
+                    trailingIcon = {
+                        if (state.searchValue.isNotEmpty()) {
+                            IconButton(onClick = { actionHandler(MainScreenActions.SetSearchValue("")) }) {
+                                Icon(Icons.Default.Close, contentDescription = "Очистить поиск")
+                            }
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions.Default.copy(
+                        imeAction = ImeAction.Search
+                    ),
+                    keyboardActions = KeyboardActions(
+                        onSearch = {
+                            active = false
+                            focusManager.clearFocus()
+                        }
+                    )
+                )
+                IconButton(
+                    onClick = { },
+                    modifier = Modifier
+                        .size(48.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.sort),
+                        contentDescription = "Выйти",
+                    )
+                }
             }
 
             if (state.data.isEmpty()) {
@@ -298,17 +315,17 @@ private fun MainScreenScreenState(
             }
 
             LazyColumn(
-                modifier = Modifier
-                    .semantics { traversalIndex = 1f },
-                contentPadding = PaddingValues(
-                    start = 8.dp,
-                    top = 85.dp,
-                    end = 8.dp,
-                    bottom = 8.dp
-                ),
+                modifier = Modifier,
+                contentPadding = PaddingValues(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                items(state.data) { note ->
+                items(
+                    if (state.searchValue.isNotBlank()) {
+                        state.data.filter { it.title.contains(state.searchValue) }
+                    } else {
+                        state.data
+                    }
+                ) { note ->
                     Note(
                         noteData = note,
                         state = state,
@@ -496,6 +513,7 @@ private sealed interface MainScreenActions {
     data object DeleteAllChecked : MainScreenActions
     data class DeleteSingleChecked(val id: String) : MainScreenActions
     data object GetAllNotes : MainScreenActions
+    data class SetSearchValue(val text: String) : MainScreenActions
 }
 
 @Preview(backgroundColor = 0xFFFFFFFF)

@@ -10,5 +10,6 @@ data class MainScreenUiState(
     val email: String = "",
     val checkedNotes: List<String> = emptyList(),
     val progress: UiProgress = UiProgress.Loading,
-    val data: List<NoteData> = emptyList()
+    val data: List<NoteData> = emptyList(),
+    val searchValue: String = ""
 ) : UiState

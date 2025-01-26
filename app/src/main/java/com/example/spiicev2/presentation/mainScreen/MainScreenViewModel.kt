@@ -46,6 +46,14 @@ internal class MainScreenViewModel @Inject constructor(
         } else true
     }
 
+    fun setSearchValue(text: String){
+        setState {
+            copy (
+                searchValue = text
+            )
+        }
+    }
+
     fun getAllNotes() {
         viewModelScope.launch {
             setState {
