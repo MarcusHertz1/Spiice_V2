@@ -13,4 +13,7 @@
     <string name="deleteAllChecked">Delete</string>
     <string name="noNotes">Add notes to appear here</string>
     <string name="noMatchingNotes">No matching notes</string>
+    <string name="byDate">By date</string>
+    <string name="byTitle">By title</string>
+    <string name="search">Search…</string>
 </resources>

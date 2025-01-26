@@ -1,6 +1,6 @@
 package com.example.spiicev2.presentation.appBase
 
-interface UiProgress {
+sealed interface UiProgress {
     data object Loading: UiProgress
     data object Success: UiProgress
     data class Error (

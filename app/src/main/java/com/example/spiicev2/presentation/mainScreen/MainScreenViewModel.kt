@@ -46,12 +46,13 @@ internal class MainScreenViewModel @Inject constructor(
         } else true
     }
 
-    fun setSearchValue(text: String){
+    fun setSearchValue(text: String) {
         setState {
-            copy (
+            copy(
                 searchValue = text
             )
         }
+        filterData()
     }
 
     fun getAllNotes() {
@@ -77,6 +78,7 @@ internal class MainScreenViewModel @Inject constructor(
                         )
                     }
                 }
+                filterData()
             }
         }
     }
@@ -138,4 +140,37 @@ internal class MainScreenViewModel @Inject constructor(
             )
         }
     }
+
+    fun setSort(sort: Sort) {
+        setState {
+            copy(
+                sort = sort
+            )
+        }
+        filterData()
+    }
+
+    private fun filterData(){
+        val stateValue = state.value
+        val sort = stateValue.sort
+        val searchValue = stateValue.searchValue
+        var result = stateValue.data.filter { it.title.contains(searchValue, ignoreCase = true) }
+
+        result = when (sort) {
+            is Sort.ByTitle -> if (sort.increment) result.sortedBy { it.title }
+            else result.sortedByDescending { it.title }
+
+            is Sort.ByDate -> if (sort.increment) result.sortedBy { it.lastEditDate }
+            else result.sortedByDescending { it.lastEditDate }
+        }
+
+        println("MR: result.title = ${result.map { it.title }}")
+        println("MR: result.date = ${result.map { it.lastEditDate }}")
+        setState {
+            copy (
+                sortedData = result
+            )
+        }
+    }
+
 }

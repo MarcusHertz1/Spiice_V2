@@ -11,5 +11,7 @@ data class MainScreenUiState(
     val checkedNotes: List<String> = emptyList(),
     val progress: UiProgress = UiProgress.Loading,
     val data: List<NoteData> = emptyList(),
-    val searchValue: String = ""
+    val searchValue: String = "",
+    val sort: Sort = Sort.ByDate(true),
+    val sortedData : List<NoteData> = emptyList()
 ) : UiState

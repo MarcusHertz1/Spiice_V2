@@ -30,11 +30,14 @@ import androidx.compose.material.icons.automirrored.outlined.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -173,6 +176,12 @@ private fun MainScreenState(
                     is MainScreenActions.SetSearchValue -> viewModel.setSearchValue(
                         text = action.text
                     )
+
+                    is MainScreenActions.SetSort -> {
+                        viewModel.setSort(
+                            sort = action.sort
+                        )
+                    }
                 }
             }
         }
@@ -256,7 +265,7 @@ private fun MainScreenScreenState(
                     shape = RoundedCornerShape(30.dp),
                     value = state.searchValue,
                     onValueChange = { actionHandler(MainScreenActions.SetSearchValue(it)) },
-                    placeholder = { Text("Поиск...") },
+                    placeholder = { Text(stringResource(R.string.search)) },
                     singleLine = true,
                     leadingIcon = {
                         if (active) {
@@ -295,24 +304,91 @@ private fun MainScreenScreenState(
                         }
                     )
                 )
-                IconButton(
-                    onClick = { },
-                    modifier = Modifier
-                        .size(48.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.sort),
-                        contentDescription = "Выйти",
-                    )
+                var expanded by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(
+                        onClick = { expanded = !expanded },
+                        modifier = Modifier
+                            .size(48.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.sort),
+                            contentDescription = "Выйти",
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        val sort = state.sort
+                        Box(
+                            modifier = Modifier
+                                .clickable {
+                                    if (sort is Sort.ByDate) actionHandler(
+                                        MainScreenActions.SetSort(
+                                            sort.copy(increment = !sort.increment)
+                                        )
+                                    )
+                                    else
+                                        actionHandler(
+                                            MainScreenActions.SetSort(
+                                                Sort.ByDate(true)
+                                            )
+                                        )
+                                }
+                                .padding(16.dp)
+                                .fillMaxWidth()
+                        ) {
+                            if (sort is Sort.ByDate)
+                                Icon(
+                                    imageVector =
+                                    if (sort.increment) Icons.Outlined.KeyboardArrowDown
+                                    else Icons.Outlined.KeyboardArrowUp,
+                                    contentDescription = stringResource(R.string.byDate)
+                                )
+                            Text(
+                                stringResource(R.string.byDate),
+                                modifier = Modifier.padding(start = 30.dp),
+                                fontSize = 20.sp
+                            )
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clickable {
+                                    if (sort is Sort.ByTitle) {
+                                        actionHandler(
+                                            MainScreenActions.SetSort(
+                                                sort.copy(increment = !sort.increment)
+                                            )
+                                        )
+                                    } else {
+                                        actionHandler(
+                                            MainScreenActions.SetSort(
+                                                Sort.ByTitle(true)
+                                            )
+                                        )
+                                    }
+                                }
+                                .padding(16.dp)
+                                .fillMaxWidth()
+                        ) {
+                            if (sort is Sort.ByTitle)
+                                Icon(
+                                    imageVector =
+                                    if (sort.increment) Icons.Outlined.KeyboardArrowDown
+                                    else Icons.Outlined.KeyboardArrowUp,
+                                    contentDescription = stringResource(R.string.byTitle)
+                                )
+                            Text(
+                                stringResource(R.string.byTitle),
+                                modifier = Modifier.padding(start = 30.dp),
+                                fontSize = 20.sp
+                            )
+                        }
+                    }
                 }
             }
-
-
-            val data = if (state.searchValue.isNotBlank()) {
-                state.data.filter { it.title.contains(state.searchValue) }
-            } else {
-                state.data
-            }
+            val data = state.sortedData
             if (data.isNotEmpty()) {
                 LazyColumn(
                     modifier = Modifier
@@ -537,6 +613,7 @@ private sealed interface MainScreenActions {
     data class DeleteSingleChecked(val id: String) : MainScreenActions
     data object GetAllNotes : MainScreenActions
     data class SetSearchValue(val text: String) : MainScreenActions
+    data class SetSort(val sort: Sort) : MainScreenActions
 }
 
 @Preview(backgroundColor = 0xFFFFFFFF)
