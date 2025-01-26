@@ -97,7 +97,7 @@ class MainScreenFragment : BaseFragment() {
     @Composable
     override fun Create(arguments: Bundle?, resultChannel: Channel<Bundle>) {
         val navController = findNavController()
-        MainScreenState(navController){
+        MainScreenState(navController) {
             (activity as? MainActivity)?.finish()
         }
     }
@@ -307,63 +307,80 @@ private fun MainScreenScreenState(
                 }
             }
 
-            if (state.data.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.noNotes),
-                    color = Color.Gray,
+
+            val data = if (state.searchValue.isNotBlank()) {
+                state.data.filter { it.title.contains(state.searchValue) }
+            } else {
+                state.data
+            }
+            if (data.isNotEmpty()) {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize(),
+                    contentPadding = PaddingValues(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    items(data) { note ->
+                        Note(
+                            noteData = note,
+                            state = state,
+                            onCheckedChange = {
+                                actionHandler(
+                                    MainScreenActions.ChangeChecked(
+                                        id = note.id,
+                                        isChecked = it
+                                    )
+                                )
+                            },
+                            onLongPress = {
+                                actionHandler(
+                                    MainScreenActions.AddToChecked(
+                                        id = note.id
+                                    )
+                                )
+                            },
+                            onClickDelete = {
+                                actionHandler(
+                                    MainScreenActions.DeleteSingleChecked(
+                                        id = note.id
+                                    )
+                                )
+                            },
+                            onPress = {
+                                actionHandler(
+                                    MainScreenActions.ToNote(
+                                        data = note
+                                    )
+                                )
+                            }
+                        )
+                    }
+                }
+            } else {
+                Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .wrapContentHeight()
-                        .padding(horizontal = 12.dp),
-                    textAlign = TextAlign.Center
-                )
-            }
-
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentPadding = PaddingValues(8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                items(
-                    if (state.searchValue.isNotBlank()) {
-                        state.data.filter { it.title.contains(state.searchValue) }
-                    } else {
-                        state.data
-                    }
-                ) { note ->
-                    Note(
-                        noteData = note,
-                        state = state,
-                        onCheckedChange = {
-                            actionHandler(
-                                MainScreenActions.ChangeChecked(
-                                    id = note.id,
-                                    isChecked = it
-                                )
-                            )
-                        },
-                        onLongPress = {
-                            actionHandler(
-                                MainScreenActions.AddToChecked(
-                                    id = note.id
-                                )
-                            )
-                        },
-                        onClickDelete = {
-                            actionHandler(
-                                MainScreenActions.DeleteSingleChecked(
-                                    id = note.id
-                                )
-                            )
-                        },
-                        onPress = {
-                            actionHandler(
-                                MainScreenActions.ToNote(
-                                    data = note
-                                )
-                            )
+                ) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize(),
+                        contentPadding = PaddingValues(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        item(key = Math.random()) {
+                            Text("", color = Color.Transparent)
                         }
+                    }
+                    Text(
+                        text = if (state.data.isEmpty())
+                            stringResource(R.string.noNotes)
+                        else stringResource(R.string.noMatchingNotes),
+                        color = Color.Gray,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .wrapContentHeight()
+                            .padding(horizontal = 12.dp),
+                        textAlign = TextAlign.Center
                     )
                 }
             }

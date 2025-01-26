@@ -12,4 +12,5 @@
     <string name="emptyTitle">Empty title</string>
     <string name="deleteAllChecked">Delete</string>
     <string name="noNotes">Add notes to appear here</string>
+    <string name="noMatchingNotes">No matching notes</string>
 </resources>
