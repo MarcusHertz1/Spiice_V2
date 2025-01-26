@@ -1,6 +1,8 @@
 package com.example.spiicev2.presentation.mainScreen
 
 import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -36,6 +39,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SearchBar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -44,6 +48,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -51,6 +56,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.isTraversalGroup
@@ -71,8 +77,12 @@ import com.example.spiicev2.domain.Converters.toDate
 import com.example.spiicev2.domain.repository.NoteData
 import com.example.spiicev2.presentation.appBase.BaseFragment
 import com.example.spiicev2.presentation.appBase.NavigationCommand
+import com.example.spiicev2.presentation.appBase.UiProgress
+import com.example.spiicev2.presentation.logIn.LogInErrorType
 import com.example.spiicev2.presentation.theme.SpiiceV2Theme
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.filterNotNull
 
 class MainScreenFragment : BaseFragment() {
     @Composable
@@ -88,6 +98,23 @@ private fun MainScreenState(
     viewModel: MainScreenViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        snapshotFlow { state.progress }
+            .filterNotNull()
+            .collectLatest {
+                (it as? UiProgress.Error)?.let { error ->
+                    if (error.type == LogInErrorType.OtherError)
+                        Toast.makeText(
+                            context,
+                            error.message,
+                            Toast.LENGTH_LONG
+                        ).show()
+                }
+            }
+    }
+
     LaunchedEffect(Unit) {
         viewModel.navigationCommands.collect { command ->
             when (command) {
@@ -99,6 +126,11 @@ private fun MainScreenState(
             }
         }
     }
+
+    BackHandler {
+        if(viewModel.onBackPressed()) navController.popBackStack()
+    }
+
     MainScreenScreen(
         state = state,
         actionHandler = remember {
@@ -120,12 +152,14 @@ private fun MainScreenState(
                     )
 
                     is MainScreenActions.DeleteAllChecked -> viewModel.deleteCheckedNotes()
+                    is MainScreenActions.GetAllNotes -> viewModel.getAllNotes()
                 }
             }
         }
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainScreenScreen(
     state: MainScreenUiState,
@@ -134,19 +168,26 @@ private fun MainScreenScreen(
 
     Scaffold()
     { padding ->
-        MainScreenScreenState(
-            padding = padding,
-            state = state,
-            actionHandler = actionHandler
-        )
+        PullToRefreshBox(
+            isRefreshing = state.progress is UiProgress.Loading,
+            onRefresh = {
+                actionHandler(MainScreenActions.GetAllNotes)
+            },
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+        ) {
+            MainScreenScreenState(
+                state = state,
+                actionHandler = actionHandler
+            )
+        }
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainScreenScreenState(
-    padding: PaddingValues = PaddingValues(),
-
     state: MainScreenUiState,
     actionHandler: (MainScreenActions) -> Unit = {}
 ) {
@@ -158,7 +199,6 @@ private fun MainScreenScreenState(
 
     Box(
         modifier = Modifier
-            .padding(padding)
             .fillMaxSize()
     )
     {
@@ -294,20 +334,29 @@ private fun MainScreenScreenState(
             Icon(Icons.Filled.Add, "Floating action button.")
         }
         if (state.checkedNotes.isNotEmpty())
-            Button(
-                onClick = {
-                    actionHandler(MainScreenActions.DeleteAllChecked)
-                },
-                colors = ButtonColors(
-                    containerColor = Color.Red,
-                    contentColor = Color.White,
-                    disabledContainerColor = Color.Gray,
-                    disabledContentColor = Color.White,
-                )
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.BottomCenter
             ) {
-                Text(
-                    stringResource(R.string.deleteAllChecked)
-                )
+                Button(
+                    onClick = {
+                        actionHandler(MainScreenActions.DeleteAllChecked)
+                    },
+                    colors = ButtonColors(
+                        containerColor = Color.Red,
+                        contentColor = Color.White,
+                        disabledContainerColor = Color.Gray,
+                        disabledContentColor = Color.White,
+                    ),
+                    modifier = Modifier
+                        .fillMaxHeight()
+                        .wrapContentHeight(align = Alignment.Bottom)
+                        .padding(16.dp)
+                ) {
+                    Text(
+                        stringResource(R.string.deleteAllChecked)
+                    )
+                }
             }
     }
 }
@@ -323,12 +372,14 @@ private fun Note(
 ) {
     var offsetX by remember { mutableFloatStateOf(0f) }
 
-    Box (
-        modifier = Modifier.fillMaxWidth().pointerInput(Unit) {
-            detectHorizontalDragGestures { _, dragAmount ->
-                offsetX = (offsetX + dragAmount).coerceIn(-300f, 0f)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .pointerInput(Unit) {
+                detectHorizontalDragGestures { _, dragAmount ->
+                    offsetX = (offsetX + dragAmount).coerceIn(-300f, 0f)
+                }
             }
-        }
     ) {
         Row(
             modifier = Modifier
@@ -411,9 +462,10 @@ private sealed interface MainScreenActions {
     data class ChangeChecked(val id: String, val isChecked: Boolean) : MainScreenActions
     data object DeleteAllChecked : MainScreenActions
     data class DeleteSingleChecked(val id: String) : MainScreenActions
+    data object GetAllNotes : MainScreenActions
 }
 
-/*@Preview(backgroundColor = 0xFFFFFFFF)
+@Preview(backgroundColor = 0xFFFFFFFF)
 @Composable
 private fun MainScreenScreenPreview() {
     SpiiceV2Theme {
@@ -421,7 +473,7 @@ private fun MainScreenScreenPreview() {
             state = MainScreenUiState()
         )
     }
-}*/
+}
 
 @Preview(backgroundColor = 0xFFFFFFFF)
 @Composable

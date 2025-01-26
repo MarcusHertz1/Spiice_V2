@@ -35,6 +35,17 @@ internal class MainScreenViewModel @Inject constructor(
         }
     }
 
+    fun onBackPressed(): Boolean {
+        return if (state.value.checkedNotes.isNotEmpty()) {
+            setState {
+                copy(
+                    checkedNotes = emptyList()
+                )
+            }
+            false
+        } else true
+    }
+
     fun getAllNotes() {
         viewModelScope.launch {
             setState {
