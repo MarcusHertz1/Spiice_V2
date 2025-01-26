@@ -8,5 +8,6 @@ data class NoteData(
     val id: String = "",
     val title: String = "",
     val text: String = "",
-    val lastEditDate: Long = 0L
+    val lastEditDate: Long = 0L,
+    val userId: String = ""
 ) : Parcelable
