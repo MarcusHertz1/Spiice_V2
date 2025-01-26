@@ -182,7 +182,9 @@ private fun MainScreenScreen(
     actionHandler: (MainScreenActions) -> Unit = {}
 ) {
 
-    Scaffold()
+    Scaffold(
+        modifier = Modifier.fillMaxSize()
+    )
     { padding ->
         PullToRefreshBox(
             isRefreshing = state.progress is UiProgress.Loading,
@@ -201,7 +203,6 @@ private fun MainScreenScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun MainScreenScreenState(
     state: MainScreenUiState,
@@ -315,7 +316,8 @@ private fun MainScreenScreenState(
             }
 
             LazyColumn(
-                modifier = Modifier,
+                modifier = Modifier
+                    .fillMaxSize(),
                 contentPadding = PaddingValues(8.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
