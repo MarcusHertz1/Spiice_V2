@@ -118,7 +118,8 @@ private fun NoteScreen(
                     }
                     innerTextField()
                 },
-                textStyle = TextStyle.Default.copy(fontSize = 18.sp)
+                textStyle = TextStyle.Default.copy(fontSize = 18.sp),
+                maxLines = 1
             )
         }, actions = {
             IconButton(

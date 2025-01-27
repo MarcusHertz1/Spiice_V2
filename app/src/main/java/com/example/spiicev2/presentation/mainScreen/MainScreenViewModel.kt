@@ -102,7 +102,6 @@ internal class MainScreenViewModel @Inject constructor(
                     checkedNotes = emptyList()
                 )
             }
-            getAllNotes()
         }
     }
 
@@ -120,7 +119,6 @@ internal class MainScreenViewModel @Inject constructor(
                     checkedNotes = emptyList()
                 )
             }
-            getAllNotes()
         }
     }
 
