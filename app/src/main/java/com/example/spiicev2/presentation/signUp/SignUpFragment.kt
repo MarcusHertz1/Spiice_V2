@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -19,12 +21,18 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -145,7 +153,24 @@ private fun SignUpScreenState(
             },
             isError = error != null && error.type == SignUpErrorType.EmailError
         )
+        var passwordVisibility: Boolean by remember { mutableStateOf(false) }
         OutlinedTextField(
+            visualTransformation = if (passwordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = {
+                    passwordVisibility = !passwordVisibility
+                }) {
+                    Icon(
+                        painter = painterResource(
+                            if (!passwordVisibility)
+                                R.drawable.eye_outline
+                            else
+                                R.drawable.eye_off_outline
+                        ),
+                        contentDescription = "Show hide password"
+                    )
+                }
+            },
             value = state.password,
             onValueChange = { onPasswordSet(it) },
             label = { Text(stringResource(R.string.password)) },
@@ -161,7 +186,24 @@ private fun SignUpScreenState(
             isError = error != null && (error.type == SignUpErrorType.PasswordError ||
                     error.type == SignUpErrorType.PasswordAndConfirmPasswordError)
         )
+        var confirmPasswordVisibility: Boolean by remember { mutableStateOf(false) }
         OutlinedTextField(
+            visualTransformation = if (confirmPasswordVisibility) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                IconButton(onClick = {
+                    confirmPasswordVisibility = !confirmPasswordVisibility
+                }) {
+                    Icon(
+                        painter = painterResource(
+                            if (!confirmPasswordVisibility)
+                                R.drawable.eye_outline
+                            else
+                                R.drawable.eye_off_outline
+                        ),
+                        contentDescription = "Show hide password"
+                    )
+                }
+            },
             value = state.confirmPassword,
             onValueChange = { onConfirmPasswordSet(it) },
             label = { Text(stringResource(R.string.confirmPassword)) },
